@@ -7,9 +7,6 @@ from pyspark.sql.types import (StructType, StructField, StringType,
 
 #config = configparser.ConfigParser()
 #config.read('cap.cfg')
-#S3_BUCKET = config['S3']['BUCKET']
-#S3_LAND   = config['S3']['LAND']
-#S3_STAGE  = config['S3']['STAGE']
 
 S3_LAND   = 'capstone-pubg/landing'
 S3_STAGE  = 'capstone-pubg/staging'
