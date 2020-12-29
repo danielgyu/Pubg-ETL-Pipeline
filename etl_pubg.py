@@ -5,9 +5,6 @@ from pyspark.sql.functions import (udf, col, concat,
 from pyspark.sql.types import (StructType, StructField, StringType,
                                IntegerType, FloatType, TimestampType)
 
-#config = configparser.ConfigParser()
-#config.read('cap.cfg')
-
 S3_LAND   = 'capstone-pubg/landing'
 S3_STAGE  = 'capstone-pubg/staging'
 

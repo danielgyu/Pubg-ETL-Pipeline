@@ -4,6 +4,7 @@ from airflow.utils.decorators                  import apply_defaults
 
 class DataQualityCheckOperator(BaseOperator):
     """
+    Checks the data by running queries to the loaded Redshift tables.
     """
 
     check_data_sql = (
@@ -23,6 +24,16 @@ class DataQualityCheckOperator(BaseOperator):
                  expected_result=None,
                  *args, **kwargs):
         """
+        Params
+        ------
+        postgres_conn_id : str
+            connection name of Redshift in Airflow Connection
+        tables : list
+            a list containing names of the tables to be checked
+        columns : list
+            a list containing name of the columns to be checked
+        expected_result : float
+            a float to be checked against in validation process
         """
 
         super().__init__(*args, **kwargs)
@@ -33,6 +44,10 @@ class DataQualityCheckOperator(BaseOperator):
 
     def execute(self, context):
         """
+        Validates the loaded data by using the sql defined in class.
+        It checks whether the target columns(which do not accept nulls) of the designated tables have null values.
+        If there are any null values, it would sum up to be bigger than 0.0, which is the expected result value,
+        thus raising a ValueError.
         """
         checks = zip(self.tables, self.columns)
 

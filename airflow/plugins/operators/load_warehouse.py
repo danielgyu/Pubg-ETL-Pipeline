@@ -4,6 +4,7 @@ from airflow.utils.decorators                  import apply_defaults
 
 class LoadWarehouseOperator(BaseOperator):
     """
+    Loads the corresponding Redshift table with input parameters.
     """
 
     sql = ("""
@@ -25,6 +26,22 @@ class LoadWarehouseOperator(BaseOperator):
                  truncate         = False,
                  *args, **kwargs):
         """
+        Parmas
+        ------
+        postgres_conn_id : str
+            connection name specified in Airflow Connections
+        aws_access_key : str
+            access key id for AWS credential
+        aws_secret_key : str
+            secret access key for AWS credential
+        s3_bucket : str
+            bucket name for data transfer
+        s3_key : str
+            specific key name of the corresponding table data
+        table : str
+            table name in Redshift
+        truncate : bool
+            option to truncate the table before loading
         """
 
         super().__init__(*args, **kwargs)
@@ -38,6 +55,8 @@ class LoadWarehouseOperator(BaseOperator):
 
     def execute(self, context):
         """
+        Designates target S3 ARN by combining parameter inputs.
+        Then makes a connection to redshift, and loads the table.
         """
 
         s3_arn = "{}{}".format(self.s3_bucket, self.s3_key)
