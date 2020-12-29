@@ -1,9 +1,10 @@
-CREATE IF NOT EXISTS public.matches (
+CREATE TABLE IF NOT EXISTS public.matches (
     match_id VARCHAR(256),
     game_size INTEGER,
     match_mode VARCHAR(64),
-    map VARCHAR(64)
-);
+    map VARCHAR(64) )
+DISTSTYLE all
+SORTKEY (match_id) ;
 
 CREATE TABLE IF NOT EXISTS public.details (
     detail_id VARCHAR(64),
@@ -13,8 +14,8 @@ CREATE TABLE IF NOT EXISTS public.details (
     victim_name VARCHAR(64),
     victim_placement INTEGER,
     weapon VARCHAR(64),
-    time INTEGER
-);
+    time INTEGER )
+SORTKEY (detail_id) ;
 
 CREATE TABLE IF NOT EXISTS public.dates (
     game_time DATETIME,
@@ -23,8 +24,8 @@ CREATE TABLE IF NOT EXISTS public.dates (
     month INTEGER,
     hour INTEGER,
     week INTEGER,
-    weekday INTEGER
-);
+    weekday INTEGER )
+SORTKEY (game_time) ;
 
 CREATE TABLE IF NOT EXISTS public.performances (
     performance_id VARCHAR(128),
@@ -36,8 +37,8 @@ CREATE TABLE IF NOT EXISTS public.performances (
     dmg INTEGER,
     kills INTEGER,
     survive_time FLOAT,
-    assists INTEGER 
-);
+    assists INTEGER )
+SORTKEY (performance_id) ;
 
 CREATE TABLE IF NOT EXISTS public.locations (
     location_id BIGINT,
@@ -48,5 +49,7 @@ CREATE TABLE IF NOT EXISTS public.locations (
     match_id VARCHAR(256),
     detail_id VARCHAR(64),
     date_id DATETIME,
-    performance_id VARCHAR(128)
-);
+    performance_id VARCHAR(128) )
+DISTSTYLE key
+DISTKEY (location_id)
+COMPOUND SORTKEY (killer_position_x, killer_position_y) ;
