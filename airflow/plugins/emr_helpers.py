@@ -3,7 +3,8 @@ import boto3, time
 def run_spark_step(AWS_ACCESS_KEY, AWS_SECRET_KEY):
     """
     Creates a pre-defined EMR cluster that that runs a spark application step.
-    The application file is located in line NUM, and the cluster will auto-terminate after completion.
+    The application file is located in line 96, change accordingly.
+    The cluster will auto-terminate after completion.
 
     Params
     ------
@@ -139,9 +140,10 @@ def check_emr_cluster(task_instance, AWS_ACCESS_KEY, AWS_SECRET_KEY):
         response = connection.describe_cluster(ClusterId=cluster_id)
         cluster_state = response['Cluster']['Status']['State']
 
-        if response['Cluster']['Status']['StateChangeReason']['Code'] == 'ALL_STEPS_COMPLETED':
+        if cluster_state == 'TERMINATED' and \
+           response['Cluster']['Status']['StateChangeReason']['Code'] == 'ALL_STEPS_COMPLETED':
             processing_state = False
-            pritn('EMR step complete')
+            print('EMR step complete')
         elif cluster_state == 'TERMINATED_WITH_ERRORS':
             raise ValueError("CLUSTER FAILURE REASON : {}".format(state_code))
         print('End of iteration, cluster_state = {}'.format(cluster_state))

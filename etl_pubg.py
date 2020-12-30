@@ -34,7 +34,8 @@ def transform_data(spark, input_path, output_path, hour):
     """
 
     # aggregate file
-    agg_path = "{}/aggregate/sample_agg_aa".format(input_path)
+    # sample(100k) =  sample_agg_aa
+    agg_path = "{}/aggregate/agg_match_mil".format(input_path)
     agg_df = spark.read.csv(agg_path, header=True, inferSchema=True) \
             .dropDuplicates() \
             .dropna()
@@ -90,7 +91,8 @@ def transform_data(spark, input_path, output_path, hour):
 
 
     # kill.csv
-    kill_path = "{}/kill/sample_kill_aa".format(input_path)
+    # sample(10k) = sample_kill_aa
+    kill_path = "{}/kill/kill_match_mil".format(input_path)
     kill_schema = StructType([
         StructField('killed_by',         StringType()),
         StructField('killer_name',       StringType()),

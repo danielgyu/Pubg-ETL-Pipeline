@@ -17,7 +17,7 @@ access_key = Variable.get('access_key')
 secret_key = Variable.get('secret_key')
 
 default_args = {
-    'owner': 'kungyu',
+    'owner': 'KG lee',
     'depends_on_past': False,
     'retries': 3,
     'retry_delay': timedelta(minutes=5),
@@ -28,7 +28,6 @@ dag = DAG(
     'capstone-pubg-etl',
     default_args=default_args,
     start_date=days_ago(2),
-    # schedule_interval=timedelta(days=1)
     schedule_interval='0 * * * * '
 )
 
