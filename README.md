@@ -1,4 +1,4 @@
-![intrto](images/pubg_pic.jpeg)
+![intrto](images/pubg.jpeg)
 
 # Data Engineering with PUBG data
   This project is aimed to design a etl pipeline for a PUBG(online multi-player game) dataset. It takes in two datasets, join and transform them together to make them analysis-ready in a data warehouse. 
