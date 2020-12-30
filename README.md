@@ -1,11 +1,11 @@
-![intrto](images/pubg_landscape.jpeg)
+![intrto](images/pubg_pic.jpeg)
 
 # Data Engineering with PUBG data
   This project is aimed to design a etl pipeline for a PUBG(online multi-player game) dataset. It takes in two datasets, join and transform them together to make them analysis-ready in a data warehouse. 
 
   The picture below gives a visualization of the overall data infrastructure. AWS is behind every stage except Airflow, which provides the orchestration and lineage of data.
 
-![airflow](images/project_airflow.png)
+![airflow](images/pubg_airflow.png)
 
 
 # How to run
@@ -34,7 +34,7 @@
 
 # Airflow task description
 
-![dag][images/airflow_dag.png]
+![dag](images/airflow_dag.png)
 
   Here are the details of each of the tasks.
 
