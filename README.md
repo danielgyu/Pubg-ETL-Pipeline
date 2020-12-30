@@ -13,9 +13,9 @@
 - Airflow : for overall data orchestration
 - AWS Credentials : stored in Airflow Variable, for access to EMR and Reshift
 
-  Spark processing is done with step execution of EMR using IAAC. Therefore, the script for the step execution must be stored in S3. The filename is `etl_pubg.py`, change the file location in `emr_helpers.py`.
+  Spark processing is done with step execution of EMR using IaaC with boto3. Therefore, the script for the step execution must be stored in S3 to be called during cluster creation. The file which contains all the processing code is `etl_pubg.py`, so save the file in your own S3 arn and change the file location in `emr_helpers.py`.
 
-  After they're done, run the airflow dag(`capstone-pubg-etl`).
+  After these are ready, run the airflow dag(`capstone-pubg-etl`).
 
 ### Reminder
   During the execution of the DAG, it will take a while for the `check_emr_cluster` to run. That's because the specific task is waiting for the EMR step to be finished, which would take around 7~10 minutes.
@@ -27,7 +27,7 @@
 
   The original dataset is divided into two csv files, each consists of different information. In a very general sense, the `aggregate.csv` contains aggregate data of a player in one of his/her games. On the other hand,`deaths.csv` data is about each kill-death event.
 
-![modeling](images/warehouse_modeling_erd.png)
+![modeling](images/warehouse_modeling.png)
 
   In my modeling process, I've decided to location data of each action(kill-death) would be my fact table data. By making them the focal point, different analysis on different interest can be done by looking at what kind of event happened in what areas of the map.  
 
