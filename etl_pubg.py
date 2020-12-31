@@ -63,7 +63,7 @@ def transform_data(spark, input_path, output_path, hour):
         FROM
             agg_view_table
         """).dropDuplicates(['performance_id'])
-    performance_path = "{}/perf/{}/".format(output_path, hour)
+    performance_path = "{}/performance/{}/".format(output_path, hour)
     performance_table.write.parquet(performance_path, mode='overwrite')
 
     # date dimension table

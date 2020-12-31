@@ -29,8 +29,27 @@
 
 ![modeling](images/warehouse_modeling.png)
 
-  In my modeling process, I've decided to location data of each action(kill-death) would be my fact table data. By making them the focal point, different analysis on different interest can be done by looking at what kind of event happened in what areas of the map.  
+## The reason for each software used
 
+  `Star schema` was picked to provide denomralized table forms for easy table joins. I specifically had the data scientsts & analysts in mid when making modeling. Because all my data are related to the game itself and not to sales or other business metrics.
+  Therefore, `Redshift` was selected because it provides fast reads and easy aggregation by columns. Location data became the fact table since lots of insights can be found by restricting an area of a map. Sample queries can be,
+```sql
+SELECT de.weapon, de.time, m.match_id, p.dmg, p.kills
+FROM locations l
+JOIN dates da ON l.date_id = da.game_time
+JOIN details de ON l.detail_id = de.detail_id
+JOIN matches m ON l.match_id = m.match_id
+JOIN performances p ON l.performance_id = p.performance_id
+WHERE l.killer_position_x BETWEEN 2000.0 and 600000.0
+	AND da.month = 10
+LIMIT 5
+```
+  This query results this result for my dataset.
+![query](images/query.png)
+  (for a complete query, check out the 'complete-.png' in my images folder)
+
+  Lastly, `Spark` not only offers an amazing processing speed by using in-memory computation, but contains a machine learning library for data scientists. It can also access directly to S3 buckets for processing, and provides step execution meaning I don't have to keep my EMR cluster alive 24/7 but create them only when I have to use them which is extremely cost-efficient.
+  
 
 # Airflow task description
 
@@ -45,3 +64,15 @@
 - load_dimension_ : load the redshift tables by copying from the processed csv file in S3
 - check_tables : validates the data by checking unwanted null values
 - end_execution : a dummy operator signaling th end
+
+# Special Scenarios
+
+  Q: When the data was increased by 100x, do you store the data in the same way? If your project is heavy on reading over writing, how do you store the data in a way to meet this requirement? What if the requirement is heavy on writing instead?
+  - For a bigger size of data, it will still be stored in S3 because it is the most cost-efficient way to store large volumes of data in the cloud. A data catalogue would be helpful if more variations are introduced to the data. Storing in S3 also gives us the ability to process and analyze directly with EMR clusters(spark). More nodes can be added to the cluster for bigger and faster transforming or analyzing.
+  Redshift is also a great choice with bigger data size, because it has its advantages in scaling and reading. Like EMR, nodes can be added to the Redshift cluster for further scaling, and it has offers an amazing speed in terms of query speed by using MPP. However, it is not optimized for heavy writing tasks, in which case a database like Cassandra would be a better fit.
+
+  Q : How do you run this pipeline on a daily basis by 7 am every day. What if the dag fails, how do you update the dashboard? Will the dashboard still work? Or will you populate the dashboard by using last day?
+  - The pipeline can be ran daily at 7am by using the `schedule_interval` argument for the airflow dag. In case of dag failure, it can also be configured to retry as well. The data is stored by date in the S3 bucket for ed users to be sure on the update status.
+
+  Q : How do you make your database could be accessed by 100+ people? Can you come up with a more cost-effective approach? Does your project need to support 100+ connections at the same time?
+  Redshift offers 'concurrency scaling' which provides a solution to 'burst read' situations. If configured, it automatically scales the redshift up to 10 clusters which can support more than 100 concurrent connetions. Since my project is mostl for data-scientists or data-analysts who's trying to gather in-game insight rather than BI personnels, there would not be a need for 100+ connections generally.
