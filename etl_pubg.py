@@ -156,8 +156,10 @@ def transform_data(spark, input_path, output_path, hour):
     match_table.write.parquet(match_path, mode='overwrite')
 
     # location star table
+    condition = [kill_df.match_id == agg_df.match_id,
+                 kill_df.killer_name == agg_df.player_name]
     location_table = kill_df \
-            .join(agg_df, kill_df.match_id == agg_df.match_id) \
+            .join(agg_df, condition) \
             .select(
                 monotonically_increasing_id().alias('location_id'),
                 kill_df.killer_position_x,

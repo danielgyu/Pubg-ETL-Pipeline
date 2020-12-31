@@ -57,11 +57,10 @@ class DataQualityCheckOperator(BaseOperator):
                 check[0]
             )
 
-            try:
-                redshift_hook = PostgresHook(self.redshift_conn)
-                result = redshift_hook.run(sql)
-                result == self.expected_result
-                self.log.info('PASSED : {}, Table : {}, Column :  {}'.format(result, check[0], check[1]))
-            except:
-                raise ValueError('FAILED : {} , Table : {}, Column : {}'.format(result, check[0], check[1]))
+            redshift_hook = PostgresHook(self.redshift_conn)
+            result = redshift_hook.get_records(sql)
+            if result[0][0] == self.expected_result:
+                self.log.info('PASSED : {}, {} from {}'.format(result, check[0], check[1]))
+            else:
+                raise ValueError('FAILED : {},{} from {}'.format(result, check[0], check[1]))
 
