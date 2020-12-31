@@ -50,7 +50,7 @@ LIMIT 3
 
   Lastly, `Spark` not only offers an amazing processing speed by using in-memory computation, but contains a machine learning library for data scientists. It can also access directly to S3 buckets for processing, and provides step execution meaning I don't have to keep my EMR cluster alive 24/7 but create them only when I have to use them which is extremely cost-efficient.
   
-  For a complete __**data dictionary**__, click this link. [a relative link](images/data_dictionary.md)
+  For a complete __**data dictionary**__, click this [link](images/data_dictionary.md).
 
 # Airflow task description
 
