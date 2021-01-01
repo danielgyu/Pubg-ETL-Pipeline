@@ -1,38 +1,39 @@
-![intrto](images/pubg.jpeg)
+![intro](images/pubg.jpeg)
+(For an english version README, check out the images folder)
 
-# Data Engineering with PUBG data
-  This project is aimed to design a etl pipeline for a PUBG(online multi-player game) dataset. It takes in two datasets, join and transform them together to make them analysis-ready in a data warehouse. 
+# PUBG 데이터셋을 활용한 데이터 엔지니어링
+  이 프로젝트는 캐글에 올라온 펍지 데이터를 가지고 ETL 파이프라인을 디자인하고 구현하는 프로젝트 입니다. 총 두개의 데이터셋을 가지고 서로 조인하고 가공을 해서 analysis-ready한 결과물로 만들어서 웨어하우스에 저장을 합니다. 이 프로젝트는 Udacity의 캡스톤 프로젝트이고, 처음 설계부터 모든 코드 구현을 혼자 했습니다.
 
-  The picture below gives a visualization of the overall data infrastructure. AWS is behind every stage except Airflow, which provides the orchestration and lineage of data.
+  아래는 시각화를 이용해서 전체적인 데이터 플로우와 인프라를 보여줍니다. 모든 단계에는 AWS의 서비스를 사용했고, Airflow를 통해서 orchestration 및 lineage를 관리했습니다.
 
 ![airflow](images/pubg_airflow.png)
 
+# 실행하는 방법
+  프로젝트를 clone해서 실행하기 위해서 필요한 부분들은 다음과 같습니다.
+- Airflow : 전체적인 실행을 주관
+- AWS 접속키 : 아마존 웹서비스의 루트 혹은 IAM의 access_key_id 혹은 secret_acess_key가 필요
 
-# How to run
-  Here are the pre-requisites in order to to run the project.
-- Airflow : for overall data orchestration
-- AWS Credentials : stored in Airflow Variable, for access to EMR and Reshift
+  에어플로우에서 AWS접근을 IaC인 boto3를 활용을 하는데, 랜딩된 데이터셋을 가공하기 위해서 EMR 클러스터를 만들고 Spark job을 실행합니다. 이 때 Spark job과 관련된 스크립트가 미리 S3버켓에 저장돼 있어서 IaC스크립트에서 지정해줘야 하기 때문에, Spark job인 `elt_pubg.py` 파일을 개인의 S3버킷에 저장하고, `airflow/plugins/emr_helpers.py`에 해당 파일의 ARN을 교체해주면 된다.
 
-  Spark processing is done with step execution of EMR using IaaC with boto3. Therefore, the script for the step execution must be stored in S3 to be called during cluster creation. The file which contains all the processing code is `etl_pubg.py`, so save the file in your own S3 arn and change the file location in `emr_helpers.py`.
+  위에 단계들이 충족됐을 때, 에어플로우 웹서버와 스케줄러를 실행하고, `capstone-pubg-elt` DAG를 런 시키면 됩니다.
 
-  After these are ready, run the airflow dag(`capstone-pubg-etl`).
+### 주의할 점
+  해당 DAG가 돌아갈 때, `check_emr_cluster` 단계에서 넘어가기까지 좀 오래 걸립니다. 그 이유는 EMR cluster를 만들어서 Spark job을 완성할 때까지 기다리는 task이기 때문인데, 대략 10분정도 소요됩니다.
 
-### Reminder
-  During the execution of the DAG, it will take a while for the `check_emr_cluster` to run. That's because the specific task is waiting for the EMR step to be finished, which would take around 7~10 minutes.
+# Redshift 모델링
 
+  먼저 데이터를 어떻게 모델링 했는지 설명하기 전에, 이 데이터셋은 KP라는 유저가 캐글에 올라온걸 사용했습니다. 원래 파일은 훨씬 더 큰데, 프로젝트 요구조건이 최소 100만 레코드인 데이터에 대한 ETL이기 때문에 shell command 인`split -l 1000000 aggregate.csv`로 파일을 나누었습니다.
 
-# Description of Redshift modeling
-
-  Before outlining the data warehouse structure, I would first like to give credit to the original creator of the dataset. I got the dataset from Kaggle, where KP uploaded about three years ago. Follow this url : https://www.kaggle.com/skihikingkevin/pubg-match-deaths
-
-  The original dataset is divided into two csv files, each consists of different information. In a very general sense, the `aggregate.csv` contains aggregate data of a player in one of his/her games. On the other hand,`deaths.csv` data is about each kill-death event.
+  총 두가지 CSV파일이 있는데, `aggregate.csv`와 `deaths.csv`가 있습니다. Aggregate 파일은 한 게임에서 한 유저의 게임스탯이 포함돼 있고, Deaths 파일은 각 이벤트(killer-victim) 와 관련된 정보가 담겨져 있습니다
 
 ![modeling](images/warehouse_modeling.png)
 
-## The reason for each software used
+## 모델링과 관련된 스택을 선택한 이유
 
-  `Star schema` was chosen in order to provide denomralized table forms for easy table joins. I specifically had the data scientsts & analysts in mid when making modeling. Because all my data are related to the game itself and not to sales or other business metrics.
-  Therefore, `Redshift` was selected because it provides fast reads and easy aggregation by columns. Location data became the fact table since lots of insights can be found by restricting an area of a map. A sample query to look for insights based on part of the map area can be like as follows,
+  모델링 사진을 보시면 최종적으로 **__Star Schema__** 를 적용했는데, 원래 두개의 데이터셋에서 여러개의 비정규화된 형태로 바꿈으로서 조인이 쉬워지고, 최종 사용자(데이터 사이언티스트나 분석가)가 더 직관적으로 & 쉽게 분석을 할 수 있도록 모델링을 했습니다.
+  웨어하우스로는 **__AWS Redshift__**를 선택했는데, 그 이유는 빠른 read와칼럼별  aggregate에 장점이 있어서 입니다. **__Fact__**에 killer-victim과 관련된 장소 데이터가 들어가 있는 이유는, 특정 location에서 발생하는 이벤트로 여러가지 인사이트를 얻고 테스트를 할 수 있기 때문입니다.
+
+  아래와 같은 sql로 특정 장소에서 발생한 이벤트들에 대한 게임 정보및 이벤트 정보를 확인할 수 있습니다.
 ```sql
 SELECT de.weapon, de.time, m.match_id, p.dmg, p.kills
 FROM locations l
@@ -44,36 +45,25 @@ WHERE l.killer_position_x BETWEEN 2000.0 and 600000.0
 	AND da.month = 10
 LIMIT 3
 ```
-  This query results this result for my dataset.
+  이 쿼리의 결과는 다음과 같습니다. 모든 테이블을 조인한 결과는 이 [csv](images/complete.csv)를 확인하시면 됩니다.
 ![query](images/query.png)
-  (for a result of one complete row, check out the 'complete.csv' in the images folder)
 
-  Lastly, `Spark` not only offers an amazing processing speed by using in-memory computation, but contains a machine learning library for data scientists. It can also access directly to S3 buckets for processing, and provides step execution meaning I don't have to keep my EMR cluster alive 24/7 but create them only when I have to use them which is extremely cost-efficient.
-  
-  For a complete __**data dictionary**__, click this [link](images/data_dictionary.md).
+  마지막으로 **__Spark__** 를 사용한 이유는 in-memory을 사용하는 강력한 컴퓨팅이 첫번째 이유이고, EMR를 사용한다면 클러스터를 계속 살려둘 필요없이 필요할 때만 만들어서 S3에 저장된 파일을 접근해서 step execution을 통해 작업을 가능케 해주는 가성비와 편의함 때문 입니다.
 
-# Airflow task description
+  제가 만든 웨어하우스 데이터와 관련된 __**data dictionary**__는 이 [link](images/data_dictionary.md)를 확인하실 수 있습니다.
+
+# Airflow 작업 설명
 
 ![dag](images/airflow_dag.png)
 
-  Here are the details of each of the tasks.
+  각 작업에 대한 디테일들 입니다.
 
-- begin_execution : a dummy operator signaling the start
-- emr_step_spark : runs the python callable `run_spark_step` in `plugins/emr_helpers.py`. This function uses boto3 in order to utilize IAAC to run a EMR cluster for a spark application and terminate after step completion.
-- check_emr_cluster : runs the python callable `check_emr_cluster` which ensures the step completion of the created EMR cluster. Raises a ValueError when the step was incomplete.
-- create_redshift_tables : creates the star and dimension tables in redshift
-- load_dimension_ : load the redshift tables by copying from the processed csv file in S3
-- check_tables : validates the data by checking unwanted null values
-- end_execution : a dummy operator signaling th end
+- begin_execution : DummyOperator로, DAG을 시작을 알림
+- emr_step_spark : `plugins/emr_helpers.py`에 있는 `run_spark_step`이라는 python_callable을 실행, AWS EMR 클러스터를 만들고 지정된 step을 실행시키고 결과물을 S3에 스테이징한 후 클러스터 자동종료
+- check_emr_cluster : 같은 파일의 `check_emr_cluster`을 실행, 생성된 클러스터의 상태를 3분마다 체크하면서 step이 성공했을 경우 다음 단계로, 실패했을 경우 에러를 띄워서 DAG를 멈춤
+- create_redshift_tables : 웨어하우스에 테이블이 없을 경우 생성, 나중에 분석을 할 경우를 미리 생각해서 DISTKEY와 SORTKEY를 지정
+- load : 스테이징 존에 있는 paquet파일을 로드해서 해당 테이블에 저장
+- check_tables : 각 테이블마다 검증을 진행, NULL이 없어야 하는 칼럼에 NULL이 없는지 확인 - 자동으로 칼럼에 값이 들어갔는지 확인
+- end_execution : DAG를 마무리하는 DummyOperator
 
-# Special Scenarios
-
-  Q: When the data was increased by 100x, do you store the data in the same way? If your project is heavy on reading over writing, how do you store the data in a way to meet this requirement? What if the requirement is heavy on writing instead?
-  - For a bigger size of data, it will still be stored in S3 because it is the most cost-efficient way to store large volumes of data in the cloud. A data catalogue would be helpful if more variations are introduced to the data. Storing in S3 also gives us the ability to process and analyze directly with EMR clusters(spark). More nodes can be added to the cluster for bigger and faster transforming or analyzing.
-  Redshift is also a great choice with bigger data size, because it has its advantages in scaling and reading. Like EMR, nodes can be added to the Redshift cluster for further scaling, and it has offers an amazing speed in terms of query speed by using MPP. However, it is not optimized for heavy writing tasks, in which case a database like Cassandra would be a better fit.
-
-  Q : How do you run this pipeline on a daily basis by 7 am every day. What if the dag fails, how do you update the dashboard? Will the dashboard still work? Or will you populate the dashboard by using last day?
-  - The pipeline can be ran daily at 7am by using the `schedule_interval` argument for the airflow dag. In case of dag failure, it can also be configured to retry as well. The data is stored by date in the S3 bucket for ed users to be sure on the update status.
-
-  Q : How do you make your database could be accessed by 100+ people? Can you come up with a more cost-effective approach? Does your project need to support 100+ connections at the same time?
- -  Redshift offers 'concurrency scaling' which provides a solution to 'burst read' situations. If configured, it automatically scales the redshift up to 10 clusters which can support more than 100 concurrent connetions. Since my project is mostl for data-scientists or data-analysts who's trying to gather in-game insight rather than BI personnels, there would not be a need for 100+ connections generally.
+![certificate](images/udacity_certificate.png)
